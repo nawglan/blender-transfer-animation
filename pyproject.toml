@@ -1,0 +1,27 @@
+[project]
+name = "blender-animation-transfer"
+version = "1.0.0"
+description = "Transfer animations between Blender files with rig scaling support"
+authors = [{name = "User", email = "user@example.com"}]
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+dependencies = [
+    "mathutils",
+    "numpy>=1.20.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "fake-bpy-module-latest"
+]
+
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"

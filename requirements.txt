@@ -1,0 +1,8 @@
+# Blender Animation Transfer Project Requirements
+# Note: bpy (Blender Python API) is only available when running inside Blender
+# For external development, you may need fake-bpy-module for IDE support
+
+# Development dependencies (optional)
+# fake-bpy-module-latest  # For IDE autocompletion (install only if needed)
+mathutils  # Mathematical utilities
+numpy>=1.20.0  # For mathematical operations
