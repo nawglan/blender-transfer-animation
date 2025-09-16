@@ -23,7 +23,7 @@ A Python script for transferring animations between Blender files with support f
 1. Clone this repository:
 
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/nawglan/blender-transfer-animation.git
    cd blender-transfer-animation
    ```
 
@@ -75,7 +75,7 @@ Output files are created in the same directory as the source file(s) with the na
 ## Command Line Options
 
 - `source`: Source .blend file or directory containing .blend files
-- `target`: Target .blend file (rig to receive animations)  
+- `target`: Target .blend file (rig to receive animations)
 - `--scale, -s`: Scale factor (default: 0.7)
 - `--timeout, -t`: Timeout in seconds (default: 600)
 - `--max-memory`: Max memory in MB (default: 4096)
@@ -129,7 +129,7 @@ The `transfer_animation.py` script works as a standalone Python program that con
 ### 5. Scaling and Safety
 
 - **Location Properties**: Multiplied by scale factor (e.g., 0.7 for 70% scaling)
-- **Rotation Properties**: Copied unchanged (preserves animation style)  
+- **Rotation Properties**: Copied unchanged (preserves animation style)
 - **Scale Properties**: Copied unchanged (maintains proportions)
 - **Safety Monitoring**: Prevents infinite loops, memory overruns, and timeouts
 
@@ -180,18 +180,22 @@ Adjust safety monitoring limits:
 ### Common Issues
 
 1. **"No target armature found"**
+
    - Ensure your target .blend file contains an armature object
    - The script looks for objects with type 'ARMATURE' in the scene
 
 2. **"No source armature found"**
+
    - Check that the source .blend file contains armatures
    - Verify the source file path is correct and accessible
 
 3. **"No animation data found"**
+
    - The source armature must have animation data assigned
    - Check that the source file contains action objects with keyframes
 
 4. **Memory or timeout errors**
+
    - Use `--max-memory` to increase memory limits
    - Use `--timeout` to allow longer processing time
    - Try `--max-frames` and `--max-bones` to limit scope
