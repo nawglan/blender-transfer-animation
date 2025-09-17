@@ -11,6 +11,7 @@ import tempfile
 import os
 import sys
 import argparse
+from typing import Optional
 from pathlib import Path
 import json
 import time
@@ -376,15 +377,17 @@ def copy_target_file(target_path: str, output_path: str) -> bool:
         return False
 
 
-def find_blend_files(path: str) -> list:
+def find_blend_files(path: str, target_path: Optional[str] = None) -> list:
     """
     Find .blend files in a path (file or directory).
+    Excludes output files created by this script (containing '_to_[target_name]' pattern).
     
     Args:
         path: File path or directory path
+        target_path: Target .blend file path (used to identify output files to exclude)
         
     Returns:
-        List of .blend file paths
+        List of .blend file paths (excluding generated output files)
     """
     if os.path.isfile(path):
         if path.lower().endswith('.blend'):
@@ -394,15 +397,64 @@ def find_blend_files(path: str) -> list:
             return []
     elif os.path.isdir(path):
         # Find all .blend files in directory
-        blend_files = []
+        all_blend_files = []
         for pattern in ['*.blend', '*.BLEND']:
-            blend_files.extend(glob.glob(os.path.join(path, pattern)))
+            all_blend_files.extend(glob.glob(os.path.join(path, pattern)))
+        
+        # Filter out output files (those containing '_to_[target_name]' pattern)
+        blend_files = []
+        excluded_files = []
+        
+        # Extract target name if target_path is provided
+        target_name = None
+        if target_path:
+            target_name = os.path.splitext(os.path.basename(target_path))[0]
+        
+        for f in all_blend_files:
+            basename = os.path.splitext(os.path.basename(f))[0]
+            
+            # Check if this looks like an output file
+            is_output_file = False
+            if '_to_' in basename:
+                if target_name:
+                    # Check if it matches the pattern: [source_name]_to_[target_name]
+                    if basename.endswith(f'_to_{target_name}'):
+                        is_output_file = True
+                else:
+                    # For backward compatibility, be more conservative:
+                    # Only exclude files that end with '_to_' followed by a typical rig name
+                    # Avoid excluding files like "animation_to_process.blend"
+                    parts = basename.split('_to_')
+                    if (len(parts) == 2 and parts[1] and 
+                        # Exclude common words that are unlikely to be rig names
+                        parts[1].lower() not in ['process', 'file', 'data', 'temp', 'backup', 'copy'] and
+                        # Require it to look like an identifier (letters, numbers, underscores only)
+                        parts[1].replace('_', '').isalnum()):
+                        is_output_file = True
+            
+            if is_output_file:
+                excluded_files.append(f)
+            else:
+                blend_files.append(f)
         
         # Sort for consistent ordering
         blend_files.sort()
-        print(f"Found {len(blend_files)} .blend files in {path}")
+        excluded_files.sort()
+        
+        print(f"Found {len(blend_files)} source .blend files in {path}")
+        if excluded_files:
+            if target_name:
+                print(f"Excluded {len(excluded_files)} output files (ending with '_to_{target_name}')")
+            else:
+                print(f"Excluded {len(excluded_files)} output files (containing '_to_' pattern)")
+            
         for f in blend_files:
             print(f"  - {os.path.basename(f)}")
+            
+        if excluded_files:
+            print("Excluded files:")
+            for f in excluded_files:
+                print(f"  - {os.path.basename(f)} (output file)")
         
         return blend_files
     else:
@@ -557,7 +609,7 @@ Output files are created in the same directory as the source file(s) with names 
         sys.exit(1)
     
     # Find source files
-    source_files = find_blend_files(args.source)
+    source_files = find_blend_files(args.source, args.target)
     if not source_files:
         print("ERROR: No valid .blend source files found")
         sys.exit(1)
