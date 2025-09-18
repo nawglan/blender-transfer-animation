@@ -59,6 +59,12 @@ Process multiple .blend files in a directory:
 # Custom scale factor
 .venv/bin/python transfer_animation.py source.blend target.blend --scale 0.5
 
+# Using The Sims 4 preset rig types (adult to child scaling)
+.venv/bin/python transfer_animation.py source.blend target.blend --from adult --to child
+
+# Using The Sims 4 preset rig types (child to adult scaling)
+.venv/bin/python transfer_animation.py source.blend target.blend --from child --to adult
+
 # Custom safety limits
 .venv/bin/python transfer_animation.py source.blend target.blend --timeout 300 --max-memory 2048
 
@@ -76,13 +82,31 @@ Output files are created in the same directory as the source file(s) with the na
 
 - `source`: Source .blend file or directory containing .blend files
 - `target`: Target .blend file (rig to receive animations)
-- `--scale, -s`: Scale factor (default: 0.7)
+- `--scale, -s`: Scale factor (default: 1.0)
+- `--from`: Source rig type (adult or child for The Sims 4) - requires `--to`
+- `--to`: Target rig type (adult or child for The Sims 4) - requires `--from`
 - `--timeout, -t`: Timeout in seconds (default: 600)
 - `--max-memory`: Max memory in MB (default: 4096)
 - `--max-frames`: Max frames to process (default: 10000)
 - `--max-bones`: Max bones to process (default: 1000)
 - `--blender, -b`: Blender executable path (default: "blender")
 - `--continue-on-error`: Continue processing other files if one fails
+
+### Preset Rig Types (The Sims 4)
+
+When using `--from` and `--to`, the scale is automatically calculated based on these preset values for The Sims 4 game rigs:
+
+- **adult**: scale factor 1.0112 (The Sims 4 adult rig)
+- **child**: scale factor 0.6920 (The Sims 4 child rig)
+
+The final scale is calculated as: `to_scale / from_scale`
+
+Examples:
+
+- `--from adult --to child`: scale = 0.6920 / 1.0112 ≈ 0.6843
+- `--from child --to adult`: scale = 1.0112 / 0.6920 ≈ 1.4613
+
+**Note**: When using `--from` and `--to`, any `--scale` value is ignored.
 
 ## Project Structure
 
@@ -128,7 +152,7 @@ The `transfer_animation.py` script works as a standalone Python program that con
 
 ### 5. Scaling and Safety
 
-- **Location Properties**: Multiplied by scale factor (e.g., 0.7 for 70% scaling)
+- **Location Properties**: Multiplied by scale factor (e.g., 0.5 for 50% scaling)
 - **Rotation Properties**: Copied unchanged (preserves animation style)
 - **Scale Properties**: Copied unchanged (maintains proportions)
 - **Safety Monitoring**: Prevents infinite loops, memory overruns, and timeouts
@@ -137,7 +161,11 @@ The `transfer_animation.py` script works as a standalone Python program that con
 
 ### Scaling Factors
 
-You can use any scale factor via the command line:
+You can specify scaling in two ways:
+
+#### Manual Scale Factor
+
+Use any scale factor via the command line:
 
 ```bash
 # 50% scale
@@ -149,6 +177,25 @@ You can use any scale factor via the command line:
 # 30% scale (very small rig)
 .venv/bin/python transfer_animation.py source.blend target.blend --scale 0.3
 ```
+
+#### Preset Rig Type Scaling (The Sims 4)
+
+Use predefined rig types for automatic scale calculation with The Sims 4 game rigs:
+
+```bash
+# Transfer from The Sims 4 adult rig to child rig (scales down to ~68.4%)
+.venv/bin/python transfer_animation.py source.blend target.blend --from adult --to child
+
+# Transfer from The Sims 4 child rig to adult rig (scales up to ~146.1%)
+.venv/bin/python transfer_animation.py source.blend target.blend --from child --to adult
+```
+
+The preset rig types use these scale factors for The Sims 4 rigs:
+
+- **adult**: 1.0112 (The Sims 4 adult rig scale)
+- **child**: 0.6920 (The Sims 4 child rig scale, approximately 69% of adult size)
+
+When using `--from` and `--to`, the script automatically calculates the appropriate scale factor and ignores any `--scale` parameter.
 
 ### Safety Limits
 

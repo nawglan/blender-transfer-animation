@@ -20,8 +20,14 @@ from threading import Timer
 import shutil
 import glob
 
+# Scale factor constants for different rig types
+RIG_SCALES = {
+    'adult': 1.0112,
+    'child': 0.6920
+}
 
-def create_blender_script(source_blend: str, scale_factor: float = 0.7, 
+
+def create_blender_script(source_blend: str, scale_factor: float = 1.0, 
                          max_frames: int = 10000, max_bones: int = 1000, 
                          max_memory_mb: int = 4096) -> str:
     """Create the Blender Python script content."""
@@ -565,14 +571,26 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Single file transfer
-  python transfer_animation.py source.blend target.blend --scale 0.7
+  # Single file transfer with manual scale
+  python transfer_animation.py source.blend target.blend --scale 0.5
+  
+  # Using preset rig types (adult to child)
+  python transfer_animation.py source.blend target.blend --from adult --to child
+  
+  # Using preset rig types (child to adult)  
+  python transfer_animation.py source.blend target.blend --from child --to adult
   
   # Directory of source files to single target
-  python transfer_animation.py source_dir/ target.blend --scale 0.7
+  python transfer_animation.py source_dir/ target.blend --from adult --to child
   
   # Custom safety limits
-  python transfer_animation.py source.blend target.blend --scale 0.7 --timeout 600 --max-memory 4096
+  python transfer_animation.py source.blend target.blend --scale 0.5 --timeout 600 --max-memory 4096
+
+Preset rig types:
+  adult: scale factor 1.0112
+  child: scale factor 0.6920
+  
+When using --from and --to, the scale is automatically calculated as: to_scale / from_scale
 
 Output files are created in the same directory as the source file(s) with names like:
   source_name_to_target_name.blend
@@ -581,7 +599,11 @@ Output files are created in the same directory as the source file(s) with names 
     
     parser.add_argument("source", help="Source .blend file or directory containing .blend files")
     parser.add_argument("target", help="Target .blend file (rig to receive animations)")
-    parser.add_argument("--scale", "-s", type=float, default=0.7, help="Scale factor (default: 0.7)")
+    parser.add_argument("--scale", "-s", type=float, default=1.0, help="Scale factor (default: 1.0)")
+    parser.add_argument("--from", dest="from_rig", choices=['adult', 'child'], 
+                       help="Source rig type (adult or child)")
+    parser.add_argument("--to", dest="to_rig", choices=['adult', 'child'],
+                       help="Target rig type (adult or child)")
     parser.add_argument("--timeout", "-t", type=int, default=600, help="Timeout in seconds")
     parser.add_argument("--max-memory", type=int, default=4096, help="Max memory in MB")
     parser.add_argument("--max-frames", type=int, default=10000, help="Max frames to process")
@@ -591,6 +613,20 @@ Output files are created in the same directory as the source file(s) with names 
                        help="Continue processing other files if one fails")
     
     args = parser.parse_args()
+    
+    # Validate --from and --to arguments
+    if args.from_rig and not args.to_rig:
+        print("ERROR: --from requires --to to be specified")
+        sys.exit(1)
+    if args.to_rig and not args.from_rig:
+        print("ERROR: --to requires --from to be specified")
+        sys.exit(1)
+    
+    # Calculate scale factor from rig types if specified
+    if args.from_rig and args.to_rig:
+        calculated_scale = RIG_SCALES[args.to_rig] / RIG_SCALES[args.from_rig]
+        args.scale = calculated_scale
+        print(f"Calculated scale from {args.from_rig} to {args.to_rig}: {args.scale:.6f}")
     
     print("Blender Animation Transfer Tool")
     print("=" * 50)
